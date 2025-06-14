@@ -1,0 +1,14 @@
+-r requirements.txt
+ruff==0.11.13
+isort==6.0.1
+flake8==7.2.0
+pylint==3.3.7
+mypy==1.16.0
+pyright==1.1.402
+pytest==8.4.0
+pytest-drop-dup-tests==1.0.0
+pytest-sugar==1.0.0
+pytest-cov==6.2.1
+twine==6.1.0
+requests-mock==1.12.1
+types-requests==2.32.4.20250611
