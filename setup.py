@@ -23,7 +23,7 @@ def install_requires() -> typing.List[str]:
 
 setup(
     name='scrapesession',
-    version='0.0.2',
+    version='0.0.3',
     description='A library for processing image features in a dataframe.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -38,5 +38,8 @@ setup(
     license='MIT',
     install_requires=install_requires(),
     zip_safe=False,
-    packages=find_packages()
+    packages=find_packages(),
+    entry_points = {
+        'console_scripts': ['scrapesession=scrapesession.__main__:main'],
+    },
 )
