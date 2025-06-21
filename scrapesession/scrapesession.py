@@ -1,7 +1,8 @@
 """A session for efficient scraping."""
 
-# pylint: disable=too-many-positional-arguments,abstract-method,protected-access,too-many-arguments
+# pylint: disable=too-many-positional-arguments,abstract-method,protected-access,too-many-arguments,too-many-instance-attributes
 import datetime
+import http
 import logging
 import os
 import random
@@ -67,6 +68,9 @@ class ScrapeSession(requests_cache.CachedSession):
         self._wayback_client = wayback.WaybackClient()
         self._wayback_disabled = False
         self.fast_fail_urls = set()
+        self._session = requests_cache.CachedSession(*args, **kwargs)
+        self._args = args
+        self._kwargs = kwargs
 
     def _suggest_proxy(self) -> str:
         proxies = self._proxies
@@ -172,7 +176,10 @@ class ScrapeSession(requests_cache.CachedSession):
         else:
             logging.info("Request for %s caching disabled.", request.url)
 
-        response = super().send(request, **kwargs)
+        response = self._session.send(request, **kwargs)
+        if response.status_code == http.HTTPStatus.FORBIDDEN:
+            logging.info("Recreating session due to 403 on %s", request.url)
+            self._session = requests_cache.CachedSession(*self._args, **self._kwargs)
         if not self._is_fast_fail_url(response.url):
             response.raise_for_status()
         return response
