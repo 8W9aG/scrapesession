@@ -19,18 +19,21 @@ import requests_cache
 import urllib3
 import wayback  # type: ignore
 from func_timeout import FunctionTimedOut, func_set_timeout  # type: ignore
+from playwright.sync_api import sync_playwright
 from random_user_agent.params import OperatingSystem  # type: ignore
 from random_user_agent.params import SoftwareName
 from random_user_agent.user_agent import UserAgent  # type: ignore
 from requests import PreparedRequest
 from requests.cookies import RequestsCookieJar
 from requests.models import Request, Response
+from requests.structures import CaseInsensitiveDict
 from requests_cache import AnyResponse, ExpirationTime
 from tenacity import (after_log, before_log, retry, retry_if_exception_type,
                       stop_after_attempt, wait_random_exponential)
 from urllib3.response import HTTPResponse
 
 from .cookie_policy import BlockAll
+from .playwright import ensure_install
 from .session import DEFAULT_TIMEOUT
 
 
@@ -51,6 +54,45 @@ def _redirect_to(response: requests.Response) -> str | None:
                 logging.info("Following %s", redirect_url)
                 break
     return redirect_url
+
+
+def _is_cloudflare_challenge(text: str) -> bool:
+    indicators = [
+        "Just a moment...",
+        "__cf_chl_",
+        "Enable JavaScript and cookies to continue",
+        "cf-browser-verification",
+    ]
+    return any(ind in text for ind in indicators)
+
+
+def _fetch_with_playwright(url: str) -> requests.Response | None:
+    logging.info("Fetching %s with playwright", url)
+    ensure_install()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        resp = page.goto(url)
+        if resp is None:
+            return None
+
+        status_code = resp.status
+        final_url = resp.url
+        headers = resp.headers
+        html = page.content()
+
+        browser.close()
+
+    # Build fake requests.Response
+    mock_response = requests.Response()
+    mock_response.status_code = status_code
+    mock_response._content = html.encode("utf-8")
+    mock_response.headers = CaseInsensitiveDict(headers)
+    mock_response.url = final_url
+
+    return mock_response
 
 
 class ScrapeSession(requests_cache.CachedSession):
@@ -179,10 +221,21 @@ class ScrapeSession(requests_cache.CachedSession):
             logging.info("Request for %s caching disabled.", request.url)
 
         response = self._session.send(request, **kwargs)
+
+        if (
+            response.status_code == http.HTTPStatus.FORBIDDEN
+            and _is_cloudflare_challenge(response.text)
+            and request.url is not None
+        ):
+            playwright_response = _fetch_with_playwright(request.url)
+            if playwright_response is not None:
+                response = playwright_response
+
         if response.status_code == http.HTTPStatus.FORBIDDEN:
             logging.info("Recreating session due to 403 on %s", request.url)
             self._session = requests_cache.CachedSession(*self._args, **self._kwargs)
             self._session.cookies.set_policy(BlockAll())
+
         if not self._is_fast_fail_url(response.url):
             response.raise_for_status()
         return response

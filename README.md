@@ -16,6 +16,7 @@ Python 3.11.6:
 - [func-timeout](https://github.com/kata198/func_timeout)
 - [random_user_agent](https://github.com/Luqman-Ud-Din/random_user_agent)
 - [tenacity](https://github.com/jd/tenacity)
+- [playwright](https://playwright.dev/)
 
 ## Raison D'être :thought_balloon:
 
