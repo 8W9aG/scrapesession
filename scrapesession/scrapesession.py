@@ -30,6 +30,7 @@ from tenacity import (after_log, before_log, retry, retry_if_exception_type,
                       stop_after_attempt, wait_random_exponential)
 from urllib3.response import HTTPResponse
 
+from .cookie_policy import BlockAll
 from .session import DEFAULT_TIMEOUT
 
 
@@ -69,6 +70,7 @@ class ScrapeSession(requests_cache.CachedSession):
         self._wayback_disabled = False
         self.fast_fail_urls = set()
         self._session = requests_cache.CachedSession(*args, **kwargs)
+        self._session.cookies.set_policy(BlockAll())
         self._args = args
         self._kwargs = kwargs
 
@@ -180,6 +182,7 @@ class ScrapeSession(requests_cache.CachedSession):
         if response.status_code == http.HTTPStatus.FORBIDDEN:
             logging.info("Recreating session due to 403 on %s", request.url)
             self._session = requests_cache.CachedSession(*self._args, **self._kwargs)
+            self._session.cookies.set_policy(BlockAll())
         if not self._is_fast_fail_url(response.url):
             response.raise_for_status()
         return response
