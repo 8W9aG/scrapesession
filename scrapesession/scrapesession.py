@@ -241,7 +241,7 @@ class ScrapeSession(requests_cache.CachedSession):
         return response
 
     @retry(
-        stop=stop_after_attempt(64),
+        stop=stop_after_attempt(128),
         after=after_log(logging.getLogger(__name__), logging.DEBUG),
         before=before_log(logging.getLogger(__name__), logging.DEBUG),
         wait=wait_random_exponential(multiplier=1, max=240),
