@@ -76,6 +76,7 @@ def _fetch_with_playwright(url: str) -> requests.Response | None:
 
         resp = page.goto(url)
         if resp is None:
+            browser.close()
             return None
 
         status_code = resp.status
