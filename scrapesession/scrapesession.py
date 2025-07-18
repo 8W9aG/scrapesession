@@ -91,11 +91,28 @@ def _fetch_with_playwright(url: str) -> requests.Response | None:
         browser.close()
 
     # Build fake requests.Response
-    mock_response = requests.Response()
+    cookies = RequestsCookieJar()
+    mock_response = Response()
     mock_response.status_code = status_code
     mock_response._content = html.encode("utf-8")
     mock_response.headers = CaseInsensitiveDict(headers)
     mock_response.url = final_url
+    mock_response.cookies = cookies
+    mock_response.raw = HTTPResponse(
+        body=BytesIO(html.encode("utf-8")),
+        status=status_code,
+        headers=CaseInsensitiveDict(headers),
+        preload_content=False,
+    )
+    request = Request(
+        method="GET",
+        url=url,
+        headers=None,
+        cookies=cookies,
+    )
+    prepared_request = request.prepare()
+    prepared_request.prepare_cookies(cookies)
+    mock_response.request = prepared_request
 
     return mock_response
 
