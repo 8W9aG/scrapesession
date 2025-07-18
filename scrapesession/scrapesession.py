@@ -76,9 +76,7 @@ def _fetch_with_playwright(url: str) -> requests.Response | None:
 
         resp = None
         try:
-            resp = page.goto(
-                url, timeout=DEFAULT_TIMEOUT / 2.0, wait_until="domcontentloaded"
-            )
+            resp = page.goto(url, wait_until="domcontentloaded")
         except:  # noqa: E722
             pass
         if resp is None:
