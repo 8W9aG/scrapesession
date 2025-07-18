@@ -74,7 +74,7 @@ def _fetch_with_playwright(url: str) -> requests.Response | None:
         context = browser.new_context()
         page = context.new_page()
 
-        resp = page.goto(url)
+        resp = page.goto(url, timeout=DEFAULT_TIMEOUT / 2.0)
         if resp is None:
             browser.close()
             return None
