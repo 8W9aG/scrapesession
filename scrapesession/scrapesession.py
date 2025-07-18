@@ -235,6 +235,8 @@ class ScrapeSession(requests_cache.CachedSession):
             playwright_response = _fetch_with_playwright(request.url)
             if playwright_response is not None:
                 response = playwright_response
+                if not self.settings.disabled:
+                    self.cache.save_response(response=response, cache_key=key)
 
         if response.status_code == http.HTTPStatus.FORBIDDEN:
             logging.info("Recreating session due to 403 on %s", request.url)
