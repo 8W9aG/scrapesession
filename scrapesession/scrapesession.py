@@ -1,6 +1,6 @@
 """A session for efficient scraping."""
 
-# pylint: disable=too-many-positional-arguments,abstract-method,protected-access,too-many-arguments,too-many-instance-attributes
+# pylint: disable=too-many-positional-arguments,abstract-method,protected-access,too-many-arguments,too-many-instance-attributes,bare-except
 import datetime
 import http
 import logging
@@ -74,7 +74,13 @@ def _fetch_with_playwright(url: str) -> requests.Response | None:
         context = browser.new_context()
         page = context.new_page()
 
-        resp = page.goto(url, timeout=DEFAULT_TIMEOUT / 2.0)
+        resp = None
+        try:
+            resp = page.goto(
+                url, timeout=DEFAULT_TIMEOUT / 2.0, wait_until="domcontentloaded"
+            )
+        except:  # noqa: E722
+            pass
         if resp is None:
             browser.close()
             return None
