@@ -246,7 +246,10 @@ class ScrapeSession(requests_cache.CachedSession):
 
         if (
             response.status_code == http.HTTPStatus.FORBIDDEN
-            and _is_cloudflare_challenge(response.text)
+            and (
+                _is_cloudflare_challenge(response.text)
+                or "<H1>Access Denied</H1>" in response.text
+            )
             and request.url is not None
         ):
             playwright_response = _fetch_with_playwright(request.url)

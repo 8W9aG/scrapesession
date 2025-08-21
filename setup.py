@@ -23,7 +23,7 @@ def install_requires() -> typing.List[str]:
 
 setup(
     name='scrapesession',
-    version='0.0.12',
+    version='0.0.13',
     description='A library for processing image features in a dataframe.',
     long_description=long_description,
     long_description_content_type='text/markdown',
