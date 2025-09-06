@@ -409,6 +409,7 @@ def create_scrape_session(
         expire_after=requests_cache.NEVER_EXPIRE,
         allowable_methods=("GET", "HEAD", "POST"),
         stale_if_error=True,
+        backend="filesystem",
     )
     if fast_fail_urls is not None:
         session.fast_fail_urls = fast_fail_urls
