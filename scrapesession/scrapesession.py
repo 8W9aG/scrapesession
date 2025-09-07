@@ -237,8 +237,11 @@ class ScrapeSession(requests_cache.CachedSession):
                     logging.info(
                         "Found wayback machine memento for URL: %s", request.url
                     )
-                    self.cache.save_response(response=response, cache_key=key)
-                    return response
+                    try:
+                        self.cache.save_response(response=response, cache_key=key)
+                        return response
+                    except urllib3.exceptions.IncompleteRead:
+                        pass
         else:
             logging.info("Request for %s caching disabled.", request.url)
 
@@ -249,6 +252,7 @@ class ScrapeSession(requests_cache.CachedSession):
             and (
                 _is_cloudflare_challenge(response.text)
                 or "<H1>Access Denied</H1>" in response.text
+                or "espncricinfo.com" in response.url
             )
             and request.url is not None
         ):
