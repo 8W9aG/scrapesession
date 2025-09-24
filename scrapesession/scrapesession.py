@@ -406,6 +406,15 @@ class ScrapeSession(requests_cache.CachedSession):
                 return True
         return False
 
+    @retry(
+        stop=stop_after_attempt(128),
+        retry=retry_if_exception_type(sqlite3.OperationalError),
+        reraise=True,
+    )
+    def delete_urls(self, urls: list[str]) -> None:
+        """Delete the URLs from the cache."""
+        self.cache.delete(urls=urls)
+
 
 def create_scrape_session(
     name: str, fast_fail_urls: set[str] | None = None
